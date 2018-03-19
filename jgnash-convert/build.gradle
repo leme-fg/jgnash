@@ -6,6 +6,7 @@ dependencies {
 
     compile group: 'net.sf.jopt-simple', name: 'jopt-simple', version: joptSimpleVerion
     compile group: 'org.apache.commons', name: 'commons-csv', version: commons_cvs
+    compile group: 'commons-io', name: 'commons-io', version: commons_io_input
 
     testCompile project(':jgnash-core').sourceSets.test.output
 }

@@ -134,7 +134,7 @@ public class TransactionEntry implements Comparable<TransactionEntry>, Cloneable
      * @param debitAccount  debit account for the transaction
      * @param amount        amount for the transaction
      */
-    TransactionEntry(final Account creditAccount, final Account debitAccount, final BigDecimal amount) {
+    public TransactionEntry(final Account creditAccount, final Account debitAccount, final BigDecimal amount) {
         Objects.requireNonNull(creditAccount);
         Objects.requireNonNull(debitAccount);
         Objects.requireNonNull(amount);
@@ -407,8 +407,8 @@ public class TransactionEntry implements Comparable<TransactionEntry>, Cloneable
         b.append("TransactionEntry hashCode: ").append(hashCode()).append(lineSep);
         b.append("Tag:            ").append(getTransactionTag().name()).append(lineSep);
         b.append("Memo:           ").append(getMemo()).append(lineSep);
-        b.append("Debit Account:  ").append(getDebitAccount().getName()).append(lineSep);
-        b.append("Credit Account: ").append(getCreditAccount().getName()).append(lineSep);
+        b.append("Debit Account:  ").append(getDebitAccount().getPathName()).append(lineSep);
+        b.append("Credit Account: ").append(getCreditAccount().getPathName()).append(lineSep);
         b.append("Debit Amount:   ").append(getDebitAmount().toPlainString()).append(lineSep);
         b.append("Credit Amount:  ").append(getCreditAmount().toPlainString()).append(lineSep);
 

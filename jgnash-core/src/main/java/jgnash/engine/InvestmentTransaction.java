@@ -352,4 +352,10 @@ public class InvestmentTransaction extends Transaction {
 
         return getUuid().compareTo(tran.getUuid());
     }
+
+    @Override
+    public String  getAccountColumnValue(Account baseAccount){
+        return getInvestmentAccount().getName();
+    }
+
 }

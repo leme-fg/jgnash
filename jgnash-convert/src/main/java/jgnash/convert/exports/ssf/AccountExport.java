@@ -32,6 +32,7 @@ import java.util.logging.Logger;
 import jgnash.engine.Account;
 import jgnash.engine.InvestmentTransaction;
 import jgnash.engine.Transaction;
+import jgnash.engine.TransactionEntry;
 import jgnash.text.CommodityFormat;
 import jgnash.time.DateUtils;
 import jgnash.util.FileUtils;
@@ -239,22 +240,6 @@ public class AccountExport {
     }
 
     private static String getAccountColumnValue(final Transaction transaction, final Account account) {
-        if (transaction instanceof InvestmentTransaction) {
-            return ((InvestmentTransaction) transaction).getInvestmentAccount().getName();
-        }
-        
-		int count = transaction.size();
-		
-		if (count > 1) {
-		    return "[ " + count + " " + ResourceUtils.getString("Button.Splits") + " ]";
-		}
-		
-		final Account creditAccount = transaction.getTransactionEntries().get(0).getCreditAccount();
-		
-		if (creditAccount != account) {
-		   return creditAccount.getName();
-		}
-		
-		return transaction.getTransactionEntries().get(0).getDebitAccount().getName();
+        return transaction.getAccountColumnValue(account);
     }
 }

@@ -40,14 +40,7 @@ import jgnash.engine.message.MessageListener;
 import jgnash.plugin.PluginFactory;
 import jgnash.uifx.StaticUIMethods;
 import jgnash.uifx.about.AboutDialogController;
-import jgnash.uifx.actions.DefaultCurrencyAction;
-import jgnash.uifx.actions.DefaultDateFormatAction;
-import jgnash.uifx.actions.DefaultLocaleAction;
-import jgnash.uifx.actions.ExecuteJavaScriptAction;
-import jgnash.uifx.actions.ExportAccountsAction;
-import jgnash.uifx.actions.ImportAccountsAction;
-import jgnash.uifx.actions.ImportOfxAction;
-import jgnash.uifx.actions.ImportQifAction;
+import jgnash.uifx.actions.*;
 import jgnash.uifx.dialog.ChangeDatabasePasswordDialogController;
 import jgnash.uifx.dialog.ImportScriptsDialogController;
 import jgnash.uifx.dialog.PackDatabaseDialogController;
@@ -119,6 +112,9 @@ public class MenuBarController implements MessageListener {
     private MenuItem importOfxMenuItem;
 
     @FXML
+    private MenuItem importCsvMenuItem;
+
+    @FXML
     private MenuItem transNumberListMenuItem;
 
     @FXML
@@ -163,6 +159,7 @@ public class MenuBarController implements MessageListener {
         reportMenu.disableProperty().bind(disabled);
         transNumberListMenuItem.disableProperty().bind(disabled);
         importOfxMenuItem.disableProperty().bind(disabled);
+        importCsvMenuItem.disableProperty().bind(disabled);
         importQifMenuItem.disableProperty().bind(disabled);
         importAccountsMenuItem.disableProperty().bind(disabled);
         exportAccountsMenuItem.disableProperty().bind(disabled);
@@ -411,6 +408,11 @@ public class MenuBarController implements MessageListener {
     @FXML
     private void handleImportQIFAction() {
         ImportQifAction.showAndWait();
+    }
+
+    @FXML
+    private void handleImportCsvAction() {
+        ImportCsvAction.showAndWait();
     }
 
     @FXML

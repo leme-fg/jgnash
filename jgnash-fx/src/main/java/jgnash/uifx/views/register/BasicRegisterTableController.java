@@ -170,26 +170,9 @@ public class BasicRegisterTableController extends RegisterTableController {
     }
 
     private class AccountNameWrapper extends SimpleStringProperty {
-        final String split = resources.getString("Button.Splits");
-
         AccountNameWrapper(final Transaction t) {
             super();
-
-            if (t instanceof InvestmentTransaction) {
-                setValue(((InvestmentTransaction) t).getInvestmentAccount().getName());
-            } else {
-                int count = t.size();
-                if (count > 1) {
-                    setValue("[ " + count + " " + split + " ]");
-                } else {
-                    Account creditAccount = t.getTransactionEntries().get(0).getCreditAccount();
-                    if (creditAccount != account.get()) {
-                        setValue(creditAccount.getName());
-                    } else {
-                        setValue(t.getTransactionEntries().get(0).getDebitAccount().getName());
-                    }
-                }
-            }
+            setValue(t.getAccountColumnValue(account.get()));
         }
     }
 }

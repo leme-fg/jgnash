@@ -1223,7 +1223,7 @@ public class Account extends StoredObject implements Comparable<Account> {
 
     @Override
     public String toString() {
-        return name;
+        return getPathName();
     }
 
     @Override

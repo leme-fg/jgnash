@@ -24,6 +24,7 @@ allprojects {
 
         apachePoiVersion = '3.17'
         commons_cvs = '1.5'
+        commons_io_input = '2.6'
         commons_text = '1.1'
 
         hamcrestVersion = '1.3'

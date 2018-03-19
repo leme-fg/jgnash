@@ -44,6 +44,7 @@ import javax.persistence.Table;
 
 import jgnash.util.NotNull;
 import jgnash.util.Nullable;
+import jgnash.util.ResourceUtils;
 
 import static java.util.stream.Collectors.joining;
 
@@ -669,5 +670,29 @@ public class Transaction extends StoredObject implements Comparable<Transaction>
             timestamp = dateEntered.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
             dateEntered = null;
         }
+    }
+    /**
+     * Used by Table view, gets the pretty account name for a table, given what is the account being rendered
+     */
+    public String getAccountColumnValue(Account baseAccount){
+        String value = "";
+        int count = this.size();
+
+        if (count > 2) {
+            return "[ " + count + " " + ResourceUtils.getString("Button.Splits") + " ]";
+        }
+
+        for(TransactionEntry entry : transactionEntries){
+            if(!value.isEmpty()){
+                value += " ::: ";
+            }
+            Account a1 = entry.getCreditAccount();
+            if(a1!=baseAccount){
+                value += a1.getPathName();
+            }else{
+                value += entry.getDebitAccount();
+            }
+        }
+        return value;
     }
 }
