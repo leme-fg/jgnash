@@ -24,6 +24,7 @@ import jgnash.util.NotNull;
 
 import java.io.*;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.charset.Charset;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -128,7 +129,7 @@ public final class CsvParser {
         String[] splitTags = t.getPayee().split(SPLIT_PAYEE);
         BigDecimal splitPercentage = (new BigDecimal(splitTags[1])).divide(new BigDecimal(100));
         BigDecimal totalAmount = getAmountFromCsv(csvRecord.get(AMOUNT));
-        BigDecimal entry1Amount = totalAmount.multiply(splitPercentage);
+        BigDecimal entry1Amount = totalAmount.multiply(splitPercentage).setScale(2, RoundingMode.HALF_EVEN);
         Account entry1Acc = findMatchingAccount(t, splitTags[0], baseAccount);
         TransactionEntry entry = createEntry(entry1Amount, baseAccount, entry1Acc, t.getMemo());
         t.addTransactionEntry(entry);
