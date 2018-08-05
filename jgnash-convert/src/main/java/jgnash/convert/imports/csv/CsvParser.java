@@ -53,9 +53,10 @@ public final class CsvParser {
     private static final String MAIN_PAYEE = "Filipe";
     private static final String SECONDARY_PAYEE = "Brianne";
     private static final String DEFAULT_PAYEE = MAIN_PAYEE+"-50";
-    private static final String DEFAULT_BANK_PREFIX = "Canada:Bank Accounts:";
-    private static final String UNCATEGORIZED_MAIN= "Canada:Expenses:"+MAIN_PAYEE+":NoCategory";
-    private static final String UNCATEGORIZED_SECONDARY = "Canada:Expenses:"+SECONDARY_PAYEE+":NoCategory";
+    private static final String DEFAULT_BANK_PREFIX = "Bank Accounts:";
+    private static final String UNCATEGORIZED_MAIN= "Expenses:"+MAIN_PAYEE+":NoCategory";
+    private static final String UNCATEGORIZED_SECONDARY = "Expenses:"+SECONDARY_PAYEE+":NoCategory";
+    private static final String IGNORE_ACC_KEYWORD = "_Brazil";
     private final Engine engine;
     private static int transCount;
 
@@ -130,12 +131,13 @@ public final class CsvParser {
         BigDecimal splitPercentage = (new BigDecimal(splitTags[1])).divide(new BigDecimal(100));
         BigDecimal totalAmount = getAmountFromCsv(csvRecord.get(AMOUNT));
         BigDecimal entry1Amount = totalAmount.multiply(splitPercentage).setScale(2, RoundingMode.HALF_EVEN);
-        Account entry1Acc = findMatchingAccount(t, splitTags[0], baseAccount);
+        String keyword = getOrDefault(csvRecord, "Keyword", null);
+        Account entry1Acc = findMatchingAccount(t, splitTags[0], keyword, baseAccount);
         TransactionEntry entry = createEntry(entry1Amount, baseAccount, entry1Acc, t.getMemo());
         t.addTransactionEntry(entry);
         BigDecimal remainder = totalAmount.subtract(entry1Amount);
         if(remainder.compareTo(new BigDecimal(0)) != 0){
-            Account entry2Acc = findMatchingAccount(t, getOtherPayee(splitTags[0]), entry.getCreditAccount(), entry.getDebitAccount());
+            Account entry2Acc = findMatchingAccount(t, getOtherPayee(splitTags[0]), keyword, entry.getCreditAccount(), entry.getDebitAccount());
             t.addTransactionEntry(createEntry(remainder, baseAccount, entry2Acc, t.getMemo()));
         }
     }
@@ -156,8 +158,8 @@ public final class CsvParser {
     private Account findMatchingAccount(String accountName){
         return accountMap.getOrDefault(accountName, accountMap.get(DEFAULT_BANK_PREFIX+accountName));
     }
-    private Account findMatchingAccount(Transaction t, String payee, Account... blockedAccounts){
-        Account acc = AccountMatcher.getBestMatch(t, payee, blockedAccounts);
+    private Account findMatchingAccount(Transaction t, String payee, String keyword, Account... blockedAccounts){
+        Account acc = AccountMatcher.getBestMatch(t, payee, keyword, blockedAccounts);
         if(acc == null) {
             String defaultAccountKey = payee.equals(MAIN_PAYEE) ? UNCATEGORIZED_MAIN : UNCATEGORIZED_SECONDARY;
             acc = accountMap.get(defaultAccountKey);
@@ -218,7 +220,8 @@ public final class CsvParser {
 
     private void loadAccountMap() {
         engine.getAccountList().forEach( acc-> {
-            accountMap.put(acc.getPathName(), acc);
+            if(!acc.getPathName().contains(IGNORE_ACC_KEYWORD))
+                accountMap.put(acc.getPathName(), acc);
         });
     }
 }

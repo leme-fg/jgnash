@@ -18,6 +18,7 @@
 package jgnash.engine.search;
 
 import jgnash.engine.*;
+import org.apache.poi.util.SystemOutLogger;
 
 import java.util.*;
 
@@ -35,6 +36,21 @@ public class AccountMatcher {
         if(memoToAccountFrequency==null){
             updateMatchingMap();
         }
+    }
+    private static void updateMatchingMap(String keyword){
+        // incremental update
+        if(memoToAccountFrequency.get(keyword) != null){
+            // don't update twice for same keyword
+//            return;
+        }
+        Engine engine = EngineFactory.getEngine(EngineFactory.DEFAULT);
+        engine.getAccountList().forEach(account -> {
+            if(account.getPathName().contains(keyword)){
+                HashMap<Account, Double> current = memoToAccountFrequency.getOrDefault(keyword, new HashMap<>());
+                current.put(account, 1.0);
+                memoToAccountFrequency.put(keyword, current);
+            }
+        });
     }
     private static void updateMatchingMap(){
         memoToAccountFrequency = new HashMap<>();
@@ -80,11 +96,15 @@ public class AccountMatcher {
         return sanitized.trim();*/
     }
 
-    public static Account getBestMatch(Transaction transaction, String nextPayee, Account... blockedAccounts){
+    public static Account getBestMatch(Transaction transaction, String nextPayee, String keyword, Account... blockedAccounts){
         if(memoToAccountFrequency == null){
             updateMatchingMap();
         }
-        HashMap<Account, Double> matchMap = memoToAccountFrequency.get(sanitizeMemo(transaction.getMemo()));
+        boolean hasKeyword = keyword!=null && !keyword.equals("");
+        if(hasKeyword){
+            updateMatchingMap(keyword);
+        }
+        HashMap<Account, Double> matchMap = memoToAccountFrequency.get(hasKeyword ?  keyword : sanitizeMemo(transaction.getMemo()));
         Account result = null;
         if(matchMap!=null) {
             double currentScore = 0;
@@ -95,6 +115,9 @@ public class AccountMatcher {
                 // invalid if expenses are not for the correct payee
                 if(isExpense && !acc.getPathName().contains(nextPayee)){
                     continue;
+                }
+                if(hasKeyword && !acc.getPathName().contains(keyword)){
+                    isValid = false;
                 }
                 for (Account blocked : blockedAccounts) {
                     if (acc.equals(blocked)) {
