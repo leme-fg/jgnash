@@ -29,6 +29,7 @@ import java.util.*;
  *
  */
 public class AccountMatcher {
+    private static final String IGNORE_ACC_KEYWORD = "_Brazil";
 
     public static final double EXPENSES_FACTOR = 1.1;
     private static Map<String, HashMap<Account, Double>> memoToAccountFrequency;
@@ -112,6 +113,10 @@ public class AccountMatcher {
                 Account acc = entry.getKey();
                 boolean isValid=true;
                 boolean isExpense = acc.getPathName().contains("Expenses");
+
+                if(acc.getPathName().contains(IGNORE_ACC_KEYWORD))
+                   continue;
+
                 // invalid if expenses are not for the correct payee
                 if(isExpense && !acc.getPathName().contains(nextPayee)){
                     continue;
