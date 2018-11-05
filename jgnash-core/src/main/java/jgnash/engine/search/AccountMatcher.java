@@ -38,18 +38,13 @@ public class AccountMatcher {
             updateMatchingMap();
         }
     }
-    private static void updateMatchingMap(String keyword){
-        // incremental update
-        if(memoToAccountFrequency.get(keyword) != null){
-            // don't update twice for same keyword
-//            return;
-        }
+    private static void updateMatchingMap(String memo, String keyword){
         Engine engine = EngineFactory.getEngine(EngineFactory.DEFAULT);
         engine.getAccountList().forEach(account -> {
             if(account.getPathName().contains(keyword)){
-                HashMap<Account, Double> current = memoToAccountFrequency.getOrDefault(keyword, new HashMap<>());
-                current.put(account, 1.0);
-                memoToAccountFrequency.put(keyword, current);
+                HashMap<Account, Double> current = memoToAccountFrequency.getOrDefault(memo, new HashMap<>());
+                current.put(account, 10.0);
+                memoToAccountFrequency.put(memo, current);
             }
         });
     }
@@ -102,10 +97,11 @@ public class AccountMatcher {
             updateMatchingMap();
         }
         boolean hasKeyword = keyword!=null && !keyword.equals("");
+        String memo = sanitizeMemo(transaction.getMemo());
         if(hasKeyword){
-            updateMatchingMap(keyword);
+            updateMatchingMap(memo, keyword);
         }
-        HashMap<Account, Double> matchMap = memoToAccountFrequency.get(hasKeyword ?  keyword : sanitizeMemo(transaction.getMemo()));
+        HashMap<Account, Double> matchMap = memoToAccountFrequency.get(memo);
         Account result = null;
         if(matchMap!=null) {
             double currentScore = 0;

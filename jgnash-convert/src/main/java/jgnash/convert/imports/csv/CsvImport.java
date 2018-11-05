@@ -71,8 +71,10 @@ public class CsvImport {
         if(parser!=null) {
             buffer.append("\n Num Accounts :" + parser.accountMap.size());
             buffer.append("\n Num Total CSV Transactions :" + parser.getTransactions().size());
-            buffer.append("\n Num AutoCategory Transactions :" + parser.getAutoCategorizedTransactions().size());
-            parser.getAutoCategorizedTransactions().forEach((k,v)->buffer.append("Memo: '" + k +"' mapped to '" +v +"'"));
+            buffer.append("\n Num AutoCategory Transactions : " + parser.getAutoCategorizedTransactions().size());
+            parser.getAutoCategorizedTransactions().forEach((k,v)->buffer.append("\n \t Memo: '" + k +"' mapped to '" +v +"'"));
+            buffer.append("\n No Category Transactions : " + parser.getNoCategoryTransactions().size());
+            parser.getNoCategoryTransactions().forEach((k,v)->buffer.append("\n \t Memo: '" + k +"' mapped to '" +v +"'"));
         }
         buffer.append("\n Num Duplicated Transactions :" + duplicates.size());
         buffer.append("\n Num Final Transactions :" + transactions.size());

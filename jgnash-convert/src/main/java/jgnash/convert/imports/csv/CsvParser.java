@@ -66,6 +66,7 @@ public final class CsvParser {
     private static final Logger logger = Logger.getLogger(CsvParser.class.getName());
     private List<Transaction> transactions = new ArrayList<>();
     private Map<String, String> autoCategorized = new HashMap<>();
+    private Map<String, String> noCategory = new HashMap<>();
 
     private List<DateTimeFormatter> formatterList = new ArrayList<>();
 
@@ -163,6 +164,7 @@ public final class CsvParser {
         if(acc == null) {
             String defaultAccountKey = payee.equals(MAIN_PAYEE) ? UNCATEGORIZED_MAIN : UNCATEGORIZED_SECONDARY;
             acc = accountMap.get(defaultAccountKey);
+            noCategory.put(t.getMemo(), acc.getPathName());
         }else{
             logger.log(Level.FINE, "Account '"+acc.getPathName()+"' was matched automatically for transaction: "+ t.getMemo());
             autoCategorized.put(t.getMemo(), acc.getPathName());
@@ -217,11 +219,48 @@ public final class CsvParser {
     public Map<String, String> getAutoCategorizedTransactions(){
         return autoCategorized;
     }
+    public Map<String, String> getNoCategoryTransactions(){
+        return noCategory;
+    }
 
     private void loadAccountMap() {
         engine.getAccountList().forEach( acc-> {
             if(!acc.getPathName().contains(IGNORE_ACC_KEYWORD))
                 accountMap.put(acc.getPathName(), acc);
         });
+    }
+
+    public void moveTransactions(){
+        List<Transaction> transactions = engine.getTransactions();
+        LocalDate toMigrate = LocalDate.now();
+        for(Transaction t : transactions){
+            // only migrate this month trans
+            if(t.getLocalDate().getYear() == toMigrate.getYear()){
+                List<TransactionEntry> entries = t.getTransactionEntries();
+                TransactionEntry filipeEntry = null;
+                TransactionEntry brianneEntry = null;
+
+                for(TransactionEntry entry : entries){
+                    // for now, only check trans with debit
+                    String pathName= entry.getDebitAccount().getPathName();
+                    // and fees (to validate logic)
+                    if(pathName.contains("Expenses") && pathName.contains("Fees")){
+                        if(pathName.contains("Brianne")){
+                            brianneEntry = entry;
+                        }
+                        if(pathName.contains("Filipe")){
+                            filipeEntry = entry;
+                        }
+                    }
+                }
+                if(brianneEntry != null){
+                    //to migrate
+                    if(filipeEntry == null){
+                        Account oppositeAccount = findMatchingAccount()
+                        engine.addTransaction()
+                    }
+                }
+            }
+        }
     }
 }
