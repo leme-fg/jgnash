@@ -62,6 +62,7 @@ public class ImportCsvPageOneController extends AbstractWizardPaneController<Imp
     @FXML
     private void initialize() {
         updateDescriptor();
+        fileNameField.setText("/Users/fleme/Dropbox/2017Folders/jGnash/import_canada.csv");
     }
 
     @Override

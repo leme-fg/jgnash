@@ -256,13 +256,13 @@ public class MainView implements MessageListener {
         new Thread(() -> {
             try {
                 Thread.sleep(BootEngineTask.FORCED_DELAY * 3);
-                if (Options.checkForUpdatesProperty().get()) {
-                    if (!Version.isReleaseCurrent()) {
-                        JavaFXUtils.runLater(() ->
-                                StaticUIMethods.displayMessage(ResourceUtils.getString("Message.NewVersion")));
-                    }
-                    logger.info("Version check performed");
-                }
+//                if (Options.checkForUpdatesProperty().get()) {
+//                    if (!Version.isReleaseCurrent()) {
+//                        JavaFXUtils.runLater(() ->
+//                                StaticUIMethods.displayMessage(ResourceUtils.getString("Message.NewVersion")));
+//                    }
+//                    logger.info("Version check performed");
+//                }
             } catch (InterruptedException e) {
                 logger.log(Level.SEVERE, e.getLocalizedMessage(), e);
             }

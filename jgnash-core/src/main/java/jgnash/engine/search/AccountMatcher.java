@@ -93,6 +93,7 @@ public class AccountMatcher {
     }
 
     public static Account getBestMatch(Transaction transaction, String nextPayee, String keyword, Account... blockedAccounts){
+        nextPayee="Filipe"; // always save to Filipe, but with 2 different transactions?
         if(memoToAccountFrequency == null){
             updateMatchingMap();
         }

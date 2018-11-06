@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.Charset;
 import java.time.LocalDate;
+import java.time.Month;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
@@ -52,7 +53,7 @@ public final class CsvParser {
     private static final String SPLIT_PAYEE = "-";
     private static final String MAIN_PAYEE = "Filipe";
     private static final String SECONDARY_PAYEE = "Brianne";
-    private static final String DEFAULT_PAYEE = MAIN_PAYEE+"-50";
+    private static final String DEFAULT_PAYEE = "Filipe-50";
     private static final String DEFAULT_BANK_PREFIX = "Bank Accounts:";
     private static final String UNCATEGORIZED_MAIN= "Expenses:"+MAIN_PAYEE+":NoCategory";
     private static final String UNCATEGORIZED_SECONDARY = "Expenses:"+SECONDARY_PAYEE+":NoCategory";
@@ -128,19 +129,18 @@ public final class CsvParser {
 
     }
     private void addTransactionEntries(Transaction t, Account baseAccount, CSVRecord csvRecord){
-        String[] splitTags = t.getPayee().split(SPLIT_PAYEE);
-        BigDecimal splitPercentage = (new BigDecimal(splitTags[1])).divide(new BigDecimal(100));
+//        String[] splitTags = t.getPayee().split(SPLIT_PAYEE);
         BigDecimal totalAmount = getAmountFromCsv(csvRecord.get(AMOUNT));
-        BigDecimal entry1Amount = totalAmount.multiply(splitPercentage).setScale(2, RoundingMode.HALF_EVEN);
         String keyword = getOrDefault(csvRecord, "Keyword", null);
-        Account entry1Acc = findMatchingAccount(t, splitTags[0], keyword, baseAccount);
-        TransactionEntry entry = createEntry(entry1Amount, baseAccount, entry1Acc, t.getMemo());
+        Account entry1Acc = findMatchingAccount(t, "Filipe", keyword, baseAccount);
+        TransactionEntry entry = createEntry(totalAmount, baseAccount, entry1Acc, t.getMemo());
         t.addTransactionEntry(entry);
-        BigDecimal remainder = totalAmount.subtract(entry1Amount);
-        if(remainder.compareTo(new BigDecimal(0)) != 0){
-            Account entry2Acc = findMatchingAccount(t, getOtherPayee(splitTags[0]), keyword, entry.getCreditAccount(), entry.getDebitAccount());
-            t.addTransactionEntry(createEntry(remainder, baseAccount, entry2Acc, t.getMemo()));
-        }
+        // stop splitting between two.
+//        BigDecimal remainder = totalAmount.subtract(entry1Amount);
+//        if(remainder.compareTo(new BigDecimal(0)) != 0){
+//            Account entry2Acc = findMatchingAccount(t, getOtherPayee(splitTags[0]), keyword, entry.getCreditAccount(), entry.getDebitAccount());
+//            t.addTransactionEntry(createEntry(remainder, baseAccount, entry2Acc, t.getMemo()));
+//        }
     }
     private TransactionEntry createEntry(BigDecimal amount, Account baseAccount, Account destination, String memo){
         TransactionEntry entry;
@@ -230,35 +230,92 @@ public final class CsvParser {
         });
     }
 
-    public void moveTransactions(){
+    private void moveTransactions(){
         List<Transaction> transactions = engine.getTransactions();
         LocalDate toMigrate = LocalDate.now();
-        for(Transaction t : transactions){
+        for(Transaction transaction : transactions){
             // only migrate this month trans
-            if(t.getLocalDate().getYear() == toMigrate.getYear()){
-                List<TransactionEntry> entries = t.getTransactionEntries();
+            if(transaction.getLocalDate().getYear() == toMigrate.getYear() && transaction.getLocalDate().getMonth().getValue() < 9){
+                boolean toPersist = false;
+                // clone the transaction
+                try{
+                    Transaction cloned = (Transaction) transaction.clone();
+                List<TransactionEntry> entries = transaction.getTransactionEntries();
                 TransactionEntry filipeEntry = null;
                 TransactionEntry brianneEntry = null;
-
+                    boolean isDebitBrianne = true;
+                    boolean isDebitFilipe = true;
                 for(TransactionEntry entry : entries){
-                    // for now, only check trans with debit
-                    String pathName= entry.getDebitAccount().getPathName();
-                    // and fees (to validate logic)
-                    if(pathName.contains("Expenses") && pathName.contains("Fees")){
-                        if(pathName.contains("Brianne")){
+                    // debit should always be the bank account
+                    String debitPath = entry.getDebitAccount().getPathName();
+                    String creditPath =entry.getCreditAccount().getPathName();
+                    String pathName= debitPath +"_"+creditPath;
+                    if(pathName.contains("Expenses")){
+                        if(debitPath.contains("Brianne")){
                             brianneEntry = entry;
-                        }
-                        if(pathName.contains("Filipe")){
+                        }else if(debitPath.contains("Filipe")){
+                            filipeEntry = entry;
+                        } else if(creditPath.contains("Brianne")){
+                            isDebitBrianne = false;
+                            brianneEntry = entry;
+                        }else if(creditPath.contains("Filipe")){
+                            isDebitFilipe = false;
                             filipeEntry = entry;
                         }
                     }
                 }
                 if(brianneEntry != null){
+                    logger.log(Level.WARNING, "Original trans: '" + transaction.toString());
                     //to migrate
                     if(filipeEntry == null){
-                        Account oppositeAccount = findMatchingAccount()
-                        engine.addTransaction()
+                        Account acc = AccountMatcher.getBestMatch(transaction, "Filipe", isDebitBrianne ? brianneEntry.getDebitAccount().getName() : brianneEntry.getCreditAccount().getName());
+                        if(acc==null) {
+                            logger.log(Level.FINE, "Transaction '" + transaction.getMemo() + "' could not match Filipe's account.");
+                        }else{
+                            TransactionEntry newEntry = (TransactionEntry) brianneEntry.clone();
+                            cloned.setPayee("Brianne-100");
+                            if(isDebitBrianne) {
+                                // was an invalid debit/credit, fix order
+                                newEntry.setCreditAccount(acc);
+                                newEntry.setDebitAccount(brianneEntry.getCreditAccount());
+                            }else{
+                                newEntry.setCreditAccount(acc);
+                            }
+                            cloned.removeTransactionEntry(brianneEntry);
+                            cloned.addTransactionEntry(newEntry);
+                            toPersist = true;
+                        }
+                    }else{
+                        // already exist filipe, simply update value.
+                        cloned.setPayee("Filipe-50");
+                        TransactionEntry newEntry = (TransactionEntry) filipeEntry.clone();
+                        BigDecimal finalAmount = null;
+                        if(isDebitFilipe){
+                            // was an invalid debit/credit, fix order
+                            newEntry.setCreditAccount(filipeEntry.getDebitAccount());
+                            newEntry.setDebitAccount(filipeEntry.getCreditAccount());
+                        }
+                        finalAmount = filipeEntry.getDebitAmount().compareTo(new BigDecimal(0)) >= 1 ? filipeEntry.getDebitAmount() : filipeEntry.getCreditAmount();
+                        finalAmount = finalAmount.add(brianneEntry.getDebitAmount().compareTo(new BigDecimal(0)) >= 1 ? brianneEntry.getDebitAmount() : brianneEntry.getCreditAmount());
+                        if(finalAmount.compareTo(new BigDecimal(0)) < 0 ){
+                            logger.log(Level.WARNING, "wrong final amount: '" + newEntry.toString());
+                        }
+                        newEntry.setAmount(finalAmount);
+                        cloned.removeTransactionEntry(brianneEntry);
+                        cloned.removeTransactionEntry(filipeEntry);
+                        cloned.addTransactionEntry(newEntry);
+                        toPersist = true;
                     }
+                }
+                // Current issue: all transactions in general seems fine, however by end of execution bank balances were slightly affected.
+                if(toPersist){
+                    cloned.setMemo("[Merged] "+cloned.getMemo());
+                    logger.log(Level.WARNING, "Transaction to be updated: '" + cloned.toString());
+                    engine.removeTransaction(transaction);
+                    engine.addTransaction(cloned);
+                }
+                }catch(Exception e){
+                    e.printStackTrace();
                 }
             }
         }
