@@ -57,7 +57,7 @@ public final class CsvParser {
     private static final String DEFAULT_BANK_PREFIX = "Bank Accounts:";
     private static final String UNCATEGORIZED_MAIN= "Expenses:"+MAIN_PAYEE+":NoCategory";
     private static final String UNCATEGORIZED_SECONDARY = "Expenses:"+SECONDARY_PAYEE+":NoCategory";
-    private static final String IGNORE_ACC_KEYWORD = "_Brazil";
+    private static final String[] IGNORE_ACC_KEYWORDS = {"_Brazil", "_old"};
     private final Engine engine;
     private static int transCount;
 
@@ -225,11 +225,13 @@ public final class CsvParser {
 
     private void loadAccountMap() {
         engine.getAccountList().forEach( acc-> {
-            if(!acc.getPathName().contains(IGNORE_ACC_KEYWORD))
-                accountMap.put(acc.getPathName(), acc);
+            for(String toIgnore : IGNORE_ACC_KEYWORDS) {
+                if (!acc.getPathName().contains(toIgnore))
+                    accountMap.put(acc.getPathName(), acc);
+            }
         });
     }
-
+/*
     private void moveTransactions(){
         List<Transaction> transactions = engine.getTransactions();
         LocalDate toMigrate = LocalDate.now();
@@ -319,5 +321,5 @@ public final class CsvParser {
                 }
             }
         }
-    }
+    }*/
 }

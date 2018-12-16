@@ -29,7 +29,7 @@ import java.util.*;
  *
  */
 public class AccountMatcher {
-    private static final String IGNORE_ACC_KEYWORD = "_Brazil";
+    private static final String[] IGNORE_ACC_KEYWORDS = {"_Brazil", "_old"};
 
     public static final double EXPENSES_FACTOR = 1.1;
     private static Map<String, HashMap<Account, Double>> memoToAccountFrequency;
@@ -41,13 +41,23 @@ public class AccountMatcher {
     private static void updateMatchingMap(String memo, String keyword){
         Engine engine = EngineFactory.getEngine(EngineFactory.DEFAULT);
         engine.getAccountList().forEach(account -> {
-            if(account.getPathName().contains(keyword)){
+            if(!shouldIgnoreAcc(account.getPathName()) && account.getPathName().contains(keyword)){
                 HashMap<Account, Double> current = memoToAccountFrequency.getOrDefault(memo, new HashMap<>());
                 current.put(account, 10.0);
                 memoToAccountFrequency.put(memo, current);
             }
         });
     }
+
+    private static boolean shouldIgnoreAcc(String pathName) {
+        for(String toIgnore : IGNORE_ACC_KEYWORDS){
+            if(pathName.contains(toIgnore)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static void updateMatchingMap(){
         memoToAccountFrequency = new HashMap<>();
         Engine engine = EngineFactory.getEngine(EngineFactory.DEFAULT);
@@ -57,13 +67,15 @@ public class AccountMatcher {
             if(!memo.isEmpty()){
                 HashMap<Account, Double> current = memoToAccountFrequency.getOrDefault(memo, new HashMap<>());
                 transaction.getAccounts().forEach(acc->{
-                    // for now it is simply the frequency
-                    Double score = current.getOrDefault(acc, 0.0);
-                    double increment = 1.0;
-                    if(acc.getPathName().contains("Expenses")){
-                        increment *= EXPENSES_FACTOR;
+                    if(!shouldIgnoreAcc(acc.getPathName())) {
+                        // for now it is simply the frequency
+                        Double score = current.getOrDefault(acc, 0.0);
+                        double increment = 1.0;
+                        if (acc.getPathName().contains("Expenses")) {
+                            increment *= EXPENSES_FACTOR;
+                        }
+                        current.put(acc, score + increment);
                     }
-                    current.put(acc, score+increment);
                 });
                 memoToAccountFrequency.put(memo, current);
             }
@@ -110,9 +122,9 @@ public class AccountMatcher {
                 Account acc = entry.getKey();
                 boolean isValid=true;
                 boolean isExpense = acc.getPathName().contains("Expenses");
-
-                if(acc.getPathName().contains(IGNORE_ACC_KEYWORD))
-                   continue;
+                if(shouldIgnoreAcc(acc.getPathName())){
+                    continue;
+                }
 
                 // invalid if expenses are not for the correct payee
                 if(isExpense && !acc.getPathName().contains(nextPayee)){
